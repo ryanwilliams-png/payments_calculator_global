@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fresha Payment Rate Calculator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --f-dark: #0D1619;
+      --f-lime: #D4F564;
+      --f-lime-soft: #edfaa8;
+      --f-lime-dim: #b8d94f;
+      --f-surface: #f5f7f2;
+      --f-surface2: #eaeee6;
+      --f-border: rgba(13,22,25,0.12);
+      --f-border-strong: rgba(13,22,25,0.25);
+      --f-text: #0D1619;
+      --f-muted: #556066;
+      --f-hint: #8a9da3;
+      --f-loss: #a32d2d;
+      --f-white: #ffffff;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 14px;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #f0f2ee;
+      color: var(--f-text);
+      min-height: 100vh;
+      padding: 2rem 1rem 4rem;
+    }
+    .page-wrap {
+      max-width: 820px;
+      margin: 0 auto;
+    }
+    /* Header */
+    .header {
+      background: var(--f-dark);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem 2rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .header-text h1 { font-size: 22px; font-weight: 600; color: var(--f-white); margin-bottom: 4px; }
+    .header-text p { font-size: 13px; color: rgba(255,255,255,0.45); }
+    .header-badge {
+      background: var(--f-lime);
+      color: var(--f-dark);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 20px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    /* Tabs */
+    .tabs { display: flex; gap: 6px; margin-bottom: 1.25rem; flex-wrap: wrap; }
+    .tab {
+      padding: 7px 18px;
+      border-radius: 20px;
+      border: 1.5px solid var(--f-border-strong);
+      font-size: 13px;
+      cursor: pointer;
+      background: transparent;
+      color: var(--f-muted);
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .tab:hover { border-color: var(--f-dark); color: var(--f-text); }
+    .tab.active { background: var(--f-dark); color: var(--f-lime); border-color: var(--f-dark); font-weight: 600; }
+    /* Cards */
+    .card {
+      background: var(--f-white);
+      border: 1px solid var(--f-border);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .card-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--f-hint);
+      margin-bottom: 1rem;
+    }
+    /* Fields grid */
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field label { font-size: 12px; color: var(--f-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .lime-pill {
+      display: inline-block;
+      background: var(--f-lime);
+      color: var(--f-dark);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+    }
+    .wrap-in { position: relative; }
+    .pfx, .sfx {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 14px;
+      color: var(--f-hint);
+      pointer-events: none;
+    }
+    .pfx { left: 10px; }
+    .sfx { right: 10px; }
+    .field input {
+      width: 100%;
+      padding: 9px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--f-border);
+      background: var(--f-surface);
+      color: var(--f-text);
+      font-size: 14px;
+      font-family: inherit;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .field input.has-pfx { padding-left: 22px; }
+    .field input.has-sfx { padding-right: 26px; }
+    .field input:focus { outline: none; border-color: var(--f-dark); background: var(--f-white); }
+    .field input.locked { background: var(--f-surface2); color: var(--f-hint); border-color: transparent; cursor: default; }
+    /* Divider */
+    .divider { border: none; border-top: 1px solid var(--f-border); margin: 1.25rem 0; }
+    /* Add-ons */
+    .addon-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 0;
+      border-bottom: 1px solid var(--f-border);
+    }
+    .addon-row:last-child { border-bottom: none; }
+    .addon-label { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--f-text); cursor: pointer; }
+    .addon-label input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--f-dark); cursor: pointer; }
+    .addon-price { font-size: 13px; color: var(--f-muted); }
+    /* Results row */
+    .results-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 1rem; }
+    .metric { border-radius: var(--radius-md); padding: 1.1rem 1.25rem; }
+    .metric.current { background: var(--f-white); border: 1px solid var(--f-border); }
+    .metric.fresha-m { background: var(--f-dark); }
+    .metric.savings-card { background: var(--f-lime); }
+    .metric .mlabel { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; }
+    .metric.current .mlabel { color: var(--f-hint); }
+    .metric.fresha-m .mlabel { color: rgba(255,255,255,0.45); }
+    .metric.savings-card .mlabel { color: rgba(13,22,25,0.5); }
+    .metric .mval { font-size: 22px; font-weight: 600; }
+    .metric.current .mval { color: var(--f-text); }
+    .metric.fresha-m .mval { color: var(--f-lime); }
+    .metric.savings-card .mval { color: var(--f-dark); }
+    .metric.savings-card .mval.neg { color: var(--f-loss); }
+    .metric .msub { font-size: 12px; margin-top: 3px; }
+    .metric.fresha-m .msub { color: rgba(255,255,255,0.35); }
+    .metric.savings-card .msub { color: rgba(13,22,25,0.45); }
+    /* Breakdown */
+    .breakdown-card { background: var(--f-white); border: 1px solid var(--f-border); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 1rem; }
+    .compare-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .compare-header-title { font-size: 13px; font-weight: 600; color: var(--f-muted); }
+    .compare-cols { display: flex; gap: 20px; }
+    .compare-col-head { min-width: 95px; text-align: right; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--f-hint); }
+    .compare-col-head.fresha-h { color: var(--f-dark); }
+    .brow { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--f-border); }
+    .brow:last-of-type { border-bottom: none; }
+    .brow .blbl { font-size: 14px; color: var(--f-muted); }
+    .brow .bvals { display: flex; gap: 20px; }
+    .brow .bv { min-width: 95px; text-align: right; font-size: 14px; }
+    .brow .bv.cur { color: var(--f-text); }
+    .brow .bv.fre { color: var(--f-dark); font-weight: 600; }
+    .total-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 14px;
+      border-radius: var(--radius-sm);
+      background: var(--f-surface);
+      margin-top: 10px;
+    }
+    .total-row .tlbl { font-size: 14px; font-weight: 600; color: var(--f-text); }
+    .total-row .tvals { display: flex; gap: 20px; }
+    .total-row .tv { min-width: 95px; text-align: right; font-size: 15px; font-weight: 600; }
+    .total-row .tv.cur { color: var(--f-text); }
+    .total-row .tv.fre { color: var(--f-dark); }
+    /* Currency selector */
+    .currency-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 1.25rem; }
+    .currency-bar label { font-size: 13px; color: var(--f-muted); }
+    .currency-select {
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: 1.5px solid var(--f-border-strong);
+      background: var(--f-white);
+      color: var(--f-text);
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      padding-right: 28px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238a9da3' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+    }
+    .currency-select:focus { outline: none; border-color: var(--f-dark); }
+    /* Footer */
+    .footer { text-align: center; margin-top: 2rem; font-size: 12px; color: var(--f-hint); }
+    /* Responsive */
+    @media (max-width: 600px) {
+      .grid2 { grid-template-columns: 1fr; }
+      .results-row { grid-template-columns: 1fr 1fr; }
+      .results-row .savings-card { grid-column: span 2; }
+      .header { flex-direction: column; align-items: flex-start; }
+      .header-badge { align-self: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-wrap">
+
+    <div class="header">
+      <div class="header-text">
+        <h1>Payment rate calculator</h1>
+        <p>See how much you could save by switching to Fresha</p>
+      </div>
+      <div class="header-badge">Fresha</div>
+    </div>
+
+    <div class="tabs" id="region-tabs">
+      <button class="tab active" data-region="full" onclick="setRegion('full')">Full (in-person + online)</button>
+      <button class="tab" data-region="online" onclick="setRegion('online')">Online only</button>
+    </div>
+
+    <div class="currency-bar">
+      <label for="currency-select">Currency</label>
+      <select class="currency-select" id="currency-select" onchange="setCurrency(this.value)">
+        <optgroup label="Americas">
+          <option value="$">$ USD — United States</option>
+          <option value="CA$">CA$ CAD — Canada</option>
+          <option value="$">$ AUD — Australia</option>
+          <option value="$">$ NZD — New Zealand</option>
+          <option value="R$">R$ BRL — Brazil</option>
+          <option value="$">$ MXN — Mexico</option>
+        </optgroup>
+        <optgroup label="Europe">
+          <option value="£">£ GBP — United Kingdom</option>
+          <option value="€">€ EUR — Eurozone (FR, DE, ES, IT, NL…)</option>
+          <option value="zł">zł PLN — Poland</option>
+          <option value="kr">kr SEK — Sweden</option>
+          <option value="kr">kr NOK — Norway</option>
+          <option value="kr">kr DKK — Denmark</option>
+          <option value="₣">₣ CHF — Switzerland</option>
+          <option value="Kč">Kč CZK — Czech Republic</option>
+          <option value="Ft">Ft HUF — Hungary</option>
+          <option value="lei">lei RON — Romania</option>
+          <option value="лв">лв BGN — Bulgaria</option>
+          <option value="kn">kn HRK — Croatia</option>
+        </optgroup>
+        <optgroup label="Middle East &amp; Africa">
+          <option value="د.إ">د.إ AED — UAE</option>
+          <option value="﷼">﷼ SAR — Saudi Arabia</option>
+          <option value="KD">KD KWD — Kuwait</option>
+          <option value="﷼">﷼ QAR — Qatar</option>
+          <option value="﷼">﷼ OMR — Oman</option>
+          <option value="BD">BD BHD — Bahrain</option>
+          <option value="R">R ZAR — South Africa</option>
+          <option value="EGP">EGP — Egypt</option>
+          <option value="₦">₦ NGN — Nigeria</option>
+          <option value="KSh">KSh KES — Kenya</option>
+        </optgroup>
+        <optgroup label="Asia Pacific">
+          <option value="SGD$">SGD$ — Singapore</option>
+          <option value="RM">RM MYR — Malaysia</option>
+          <option value="₱">₱ PHP — Philippines</option>
+          <option value="฿">฿ THB — Thailand</option>
+          <option value="Rp">Rp IDR — Indonesia</option>
+          <option value="₹">₹ INR — India</option>
+          <option value="¥">¥ JPY — Japan</option>
+          <option value="¥">¥ CNY — China</option>
+          <option value="₩">₩ KRW — South Korea</option>
+          <option value="HK$">HK$ HKD — Hong Kong</option>
+          <option value="NT$">NT$ TWD — Taiwan</option>
+        </optgroup>
+      </select>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Your current costs</div>
+      <div class="grid2" id="current-fields"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-label">Fresha fees</div>
+      <div class="grid2" id="fresha-fields"></div>
+      <div class="divider"></div>
+      <div class="card-label">Add-ons</div>
+      <div id="addon-rows"></div>
+    </div>
+
+    <div class="results-row">
+      <div class="metric current">
+        <div class="mlabel">Current monthly</div>
+        <div class="mval" id="res-current">—</div>
+      </div>
+      <div class="metric fresha-m">
+        <div class="mlabel">Fresha monthly</div>
+        <div class="mval" id="res-fresha">—</div>
+      </div>
+      <div class="metric savings-card">
+        <div class="mlabel">Monthly savings</div>
+        <div class="mval" id="res-savings">—</div>
+        <div class="msub" id="res-savings-yr"></div>
+      </div>
+    </div>
+
+    <div class="breakdown-card">
+      <div class="compare-header">
+        <span class="compare-header-title">Cost breakdown</span>
+        <div class="compare-cols">
+          <span class="compare-col-head">Current</span>
+          <span class="compare-col-head fresha-h">Fresha</span>
+        </div>
+      </div>
+      <div id="breakdown-rows"></div>
+      <div class="total-row">
+        <span class="tlbl">Total monthly</span>
+        <div class="tvals">
+          <span class="tv cur" id="bd-total-current">—</span>
+          <span class="tv fre" id="bd-total-fresha">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">Figures are estimates only. Actual costs may vary.</div>
+  </div>
+
+  <script>
+    const regions = {
+      'full': {
+        current: [
+          { id: 'cv_debit_sales', label: 'Monthly in-person sales (card)', type: 'currency', default: 60000 },
+          { id: 'cv_debit_rate', label: 'In-person terminal rate', type: 'pct', default: 1.10 },
+          { id: 'cv_cc_sales', label: 'Monthly credit card sales', type: 'currency', default: 10000 },
+          { id: 'cv_cc_rate', label: 'Credit card rate', type: 'pct', default: 1.80 },
+          { id: 'cv_online_sales', label: 'Monthly online sales', type: 'currency', default: 15000 },
+          { id: 'cv_online_rate', label: 'Online payments rate', type: 'pct', default: 1.75 },
+          { id: 'cv_online_fee', label: 'Online fee per transaction', type: 'currency2', default: 0.30 },
+          { id: 'cv_other_fees', label: 'Other fees (additional subscription services)', type: 'currency', default: 100 },
+          { id: 'cv_booking_fee', label: 'Booking system subscription', type: 'currency', default: 450 },
+          { id: 'cv_sms_included', label: 'SMS included value', type: 'currency', default: 1000 },
+        ],
+        fresha: [
+          { id: 'fv_sales', label: 'Monthly in-person sales (all card types)', type: 'currency', default: 70000 },
+          { id: 'fv_txn', label: 'Number of in-person transactions', type: 'number', default: 150 },
+          { id: 'fv_rate', label: 'Fresha in-person rate', type: 'pct', default: 1.29, locked: true },
+          { id: 'fv_fee', label: 'Fresha in-person fee per txn', type: 'currency2', default: 0.26, locked: true },
+          { id: 'fv_online_sales', label: 'Monthly online sales', type: 'currency', default: 15000 },
+          { id: 'fv_online_txn', label: 'Number of online transactions', type: 'number', default: 150 },
+          { id: 'fv_online_rate', label: 'Fresha online rate', type: 'pct', default: 1.59, locked: true },
+          { id: 'fv_online_fee', label: 'Fresha online fee per txn', type: 'currency2', default: 0.28, locked: true },
+          { id: 'fv_subscription', label: 'Fresha subscription/month', type: 'currency', default: 149.75, locked: true },
+          { id: 'fv_sms_free', label: 'Free SMS value included', type: 'currency', default: 100 },
+          { id: 'fv_sms_extra', label: 'Additional SMS quantity', type: 'number', default: 900 },
+        ],
+        addons: [
+          { id: 'ao_loyalty', label: 'Loyalty', price: 89.95 },
+          { id: 'ao_gboost', label: 'Google Boost', price: 24.95 },
+          { id: 'ao_insight', label: 'Insights', price: 0 },
+        ],
+        calcCurrent: (v) => {
+          const txn = v.cv_debit_sales * v.cv_debit_rate / 100 + v.cv_cc_sales * v.cv_cc_rate / 100 + v.cv_online_sales * v.cv_online_rate / 100;
+          const subs = v.cv_booking_fee + v.cv_other_fees;
+          const sms = v.cv_sms_included;
+          return { txn, subs, sms, total: txn + subs + sms };
+        },
+        calcFresha: (v, aT) => {
+          const txn = v.fv_sales * v.fv_rate / 100 + v.fv_txn * v.fv_fee + v.fv_online_sales * v.fv_online_rate / 100 + v.fv_online_txn * v.fv_online_fee;
+          const subs = v.fv_subscription + aT;
+          const sms = v.fv_sms_free + v.fv_sms_extra * 0.06;
+          return { txn, subs, sms, total: txn + subs + sms };
+        },
+      },
+      'online': {
+        current: [
+          { id: 'cv_online_sales', label: 'Monthly online sales', type: 'currency', default: 15000 },
+          { id: 'cv_online_rate', label: 'Online payments rate', type: 'pct', default: 1.75 },
+          { id: 'cv_online_txn', label: 'Number of transactions', type: 'number', default: 140 },
+          { id: 'cv_online_fee', label: 'Payment processing fee per txn', type: 'currency2', default: 0.30 },
+          { id: 'cv_other_fees', label: 'Other fees (additional subscription services)', type: 'currency', default: 100 },
+          { id: 'cv_booking_fee', label: 'Booking system subscription', type: 'currency', default: 450 },
+          { id: 'cv_sms_included', label: 'SMS included value', type: 'currency', default: 1000 },
+        ],
+        fresha: [
+          { id: 'fv_online_sales', label: 'Monthly online sales', type: 'currency', default: 15000 },
+          { id: 'fv_online_txn', label: 'Number of online transactions', type: 'number', default: 249 },
+          { id: 'fv_online_rate', label: 'Fresha online rate', type: 'pct', default: 1.59, locked: true },
+          { id: 'fv_online_fee', label: 'Fresha online fee per txn', type: 'currency2', default: 0.28, locked: true },
+          { id: 'fv_subscription', label: 'Fresha subscription/month', type: 'currency', default: 149.75, locked: true },
+          { id: 'fv_sms_free', label: 'Free SMS value included', type: 'currency', default: 100 },
+          { id: 'fv_sms_extra', label: 'Additional SMS quantity', type: 'number', default: 900 },
+        ],
+        addons: [
+          { id: 'ao_loyalty', label: 'Loyalty', price: 89.95 },
+          { id: 'ao_gboost', label: 'Google Boost', price: 24.95 },
+          { id: 'ao_insight', label: 'Insights', price: 0 },
+        ],
+        calcCurrent: (v) => {
+          const txn = v.cv_online_sales * v.cv_online_rate / 100 + v.cv_online_txn * v.cv_online_fee;
+          const subs = v.cv_booking_fee + v.cv_other_fees;
+          const sms = v.cv_sms_included;
+          return { txn, subs, sms, total: txn + subs + sms };
+        },
+        calcFresha: (v, aT) => {
+          const txn = v.fv_online_sales * v.fv_online_rate / 100 + v.fv_online_txn * v.fv_online_fee;
+          const subs = v.fv_subscription + aT;
+          const sms = v.fv_sms_free + v.fv_sms_extra * 0.06;
+          return { txn, subs, sms, total: txn + subs + sms };
+        },
+      }
+    };
+
+    let currentRegion = 'full';
+    let currentSym = '$';
+
+    function setCurrency(sym) {
+      currentSym = sym;
+      renderFields(currentRegion);
+      recalc();
+    }
+
+    function fmt(n, sym) {
+      sym = sym || currentSym;
+      return sym + Math.abs(n).toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function renderFields(region) {
+      const r = regions[region];
+      const sym = currentSym;
+      const renderF = (f) => {
+        const lk = f.locked ? 'locked' : '';
+        const ro = f.locked ? 'readonly' : '';
+        let inner;
+        if (f.type === 'currency') {
+          inner = `<div class="wrap-in"><span class="pfx">${sym}</span><input type="number" id="${f.id}" value="${f.default}" step="100" class="has-pfx ${lk}" ${ro} oninput="recalc()"></div>`;
+        } else if (f.type === 'currency2') {
+          inner = `<div class="wrap-in"><span class="pfx">${sym}</span><input type="number" id="${f.id}" value="${f.default}" step="0.01" class="has-pfx ${lk}" ${ro} oninput="recalc()"></div>`;
+        } else if (f.type === 'pct') {
+          inner = `<div class="wrap-in"><span class="sfx">%</span><input type="number" id="${f.id}" value="${f.default}" step="0.01" class="has-sfx ${lk}" ${ro} oninput="recalc()"></div>`;
+        } else {
+          inner = `<div class="wrap-in"><input type="number" id="${f.id}" value="${f.default}" step="1" class="${lk}" ${ro} oninput="recalc()"></div>`;
+        }
+        const pill = f.locked ? '<span class="lime-pill">Fresha rate</span>' : '';
+        return `<div class="field"><label for="${f.id}">${f.label} ${pill}</label>${inner}</div>`;
+      };
+      document.getElementById('current-fields').innerHTML = r.current.map(renderF).join('');
+      document.getElementById('fresha-fields').innerHTML = r.fresha.map(renderF).join('');
+      document.getElementById('addon-rows').innerHTML = r.addons.map(a =>
+        `<div class="addon-row"><label class="addon-label"><input type="checkbox" id="${a.id}" ${a.price > 0 ? 'checked' : ''} onchange="recalc()"> ${a.label}</label><span class="addon-price">${a.price > 0 ? sym + a.price.toFixed(2) + '/mo' : 'Included'}</span></div>`
+      ).join('');
+    }
+
+    function getVals(region) {
+      const r = regions[region];
+      const vals = {};
+      [...r.current, ...r.fresha].forEach(f => {
+        const el = document.getElementById(f.id);
+        if (el) vals[f.id] = parseFloat(el.value) || 0;
+      });
+      return vals;
+    }
+
+    function recalc() {
+      const r = regions[currentRegion];
+      const sym = currentSym;
+      const v = getVals(currentRegion);
+      const aT = r.addons.reduce((s, a) => {
+        const el = document.getElementById(a.id);
+        return s + (el && el.checked ? a.price : 0);
+      }, 0);
+      const cur = r.calcCurrent(v);
+      const fre = r.calcFresha(v, aT);
+      const savings = cur.total - fre.total;
+
+      document.getElementById('res-current').textContent = fmt(cur.total, sym);
+      document.getElementById('res-fresha').textContent = fmt(fre.total, sym);
+      const savEl = document.getElementById('res-savings');
+      savEl.textContent = (savings >= 0 ? '' : '-') + fmt(savings, sym);
+      savEl.className = 'mval' + (savings < 0 ? ' neg' : '');
+      document.getElementById('res-savings-yr').textContent =
+        (savings >= 0 ? 'saves ' : 'costs ') + fmt(Math.abs(savings * 12), sym) + '/yr';
+
+      const labels = ['Transaction fees', 'Subscriptions & add-ons', 'SMS'];
+      const cVals = [cur.txn, cur.subs, cur.sms];
+      const fVals = [fre.txn, fre.subs, fre.sms];
+      document.getElementById('breakdown-rows').innerHTML = labels.map((lbl, i) =>
+        `<div class="brow"><span class="blbl">${lbl}</span><div class="bvals"><span class="bv cur">${fmt(cVals[i], sym)}</span><span class="bv fre">${fmt(fVals[i], sym)}</span></div></div>`
+      ).join('');
+      document.getElementById('bd-total-current').textContent = fmt(cur.total, sym);
+      document.getElementById('bd-total-fresha').textContent = fmt(fre.total, sym);
+    }
+
+    function setRegion(r) {
+      currentRegion = r;
+      document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.region === r));
+      renderFields(r);
+      recalc();
+    }
+
+    setRegion('full');
+  </script>
+</body>
+</html>
